@@ -1,0 +1,45 @@
+# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+UserSettings/
+*.pidb
+*.booproj
+*.svd
+
+# Cache & local
+*.user
+*.userprefs
+*.csproj
+*.sln
+*.suo
+*.unityproj
+
+# IDEs
+.vs/
+.idea/
+*.iml
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Android export
+.gradle/
+*.apk
+*.aab
+*.keystore
+
+# iOS/Xcode export
+DerivedData/
+*.xcworkspace/
+*.xcodeproj/
+*.xcuserstate
+*.xcuserdata/
+
+# Crash & profiler
+sysinfo.txt
