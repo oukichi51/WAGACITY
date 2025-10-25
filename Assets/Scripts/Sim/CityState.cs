@@ -5,77 +5,73 @@ using System.Linq;
 [Serializable]
 public class CityState
 {
-    public SegmentSO[] segments;
-    public float[] proportions; // セグメント比率（合計1）
-    public Season season;
-    System.Random rng;
+    public SegmentSO[] Segments;
+    public float[] Proportions; // 合計1
+    public Season Season;
+    System.Random Rng;
 
-    public CityState(SegmentSO[] segs, Season s, int seed = 123)
+    public CityState(SegmentSO[] Segs, Season S, int Seed = 123)
     {
-        segments = segs;
-        season = s;
-        rng = new System.Random(seed);
-        proportions = Dirichlet(segs.Length, 1.0f, rng);
+        Segments = Segs;
+        Season = S;
+        Rng = new System.Random(Seed);
+        Proportions = Dirichlet(Segs.Length, 1.0f, Rng);
     }
 
-    public int SampleSegmentIndex(float dayNoise = 0.2f)
+    public int SampleSegmentIndex(float DayNoise = 0.2f)
     {
-        // log(P) + N(0,σ) → softmax
-        int n = proportions.Length;
+        int n = (Proportions == null) ? 0 : Proportions.Length;
+        if (n == 0) throw new InvalidOperationException("[CityState] Proportions empty.");
         double[] logits = new double[n];
         for (int i = 0; i < n; i++)
         {
-            double g = Math.Log(Math.Max(1e-9, proportions[i])) + PreferenceModel.NextGaussian(rng, 0, dayNoise);
+            double g = Math.Log(Math.Max(1e-9, Proportions[i])) + PreferenceModel.NextGaussian(Rng, 0, DayNoise);
             logits[i] = g;
         }
-        // softmax sample
         double max = logits.Max();
         double sum = 0; double[] exps = new double[n];
         for (int i = 0; i < n; i++) { exps[i] = Math.Exp(logits[i] - max); sum += exps[i]; }
-        double r = rng.NextDouble() * sum; double acc = 0;
+        double r = Rng.NextDouble() * sum, acc = 0;
         for (int i = 0; i < n; i++) { acc += exps[i]; if (r <= acc) return i; }
         return n - 1;
     }
 
-    public void UpdateByInfluence(float[] influence, float inertia = 0.95f, float eta = 1.0f, float lambda = 0.05f)
+    public void UpdateByInfluence(float[] Influence, float Inertia = 0.95f, float Eta = 1.0f, float Lambda = 0.05f)
     {
-        // influence: セグメント別に「今日刺さった」重み
-        int n = proportions.Length;
-        float[] pt = proportions;
-        float[] target = new float[n];
+        int n = Proportions.Length;
+        var pt = Proportions;
+        var target = new float[n];
         float sum = 0;
-        for (int i = 0; i < n; i++) { target[i] = pt[i] + eta * influence[i]; sum += target[i]; }
+        for (int i = 0; i < n; i++) { target[i] = pt[i] + Eta * Influence[i]; sum += target[i]; }
         for (int i = 0; i < n; i++) { target[i] = target[i] / Math.Max(1e-6f, sum); }
-        // 遅延反映
-        for (int i = 0; i < n; i++) { proportions[i] = (1f - lambda) * pt[i] + lambda * target[i]; }
+        for (int i = 0; i < n; i++) { Proportions[i] = (1f - Lambda) * pt[i] + Lambda * target[i]; }
     }
 
-    static float[] Dirichlet(int k, float alpha, System.Random rng)
+    static float[] Dirichlet(int K, float Alpha, System.Random Rng)
     {
-        double[] g = new double[k];
+        double[] g = new double[K];
         double sum = 0;
-        for (int i = 0; i < k; i++) { g[i] = Gamma(alpha, 1, rng); sum += g[i]; }
-        float[] p = new float[k];
-        for (int i = 0; i < k; i++) p[i] = (float)(g[i] / sum);
+        for (int i = 0; i < K; i++) { g[i] = Gamma(Alpha, 1, Rng); sum += g[i]; }
+        float[] p = new float[K];
+        for (int i = 0; i < K; i++) p[i] = (float)(g[i] / sum);
         return p;
     }
-    static double Gamma(double shape, double scale, System.Random rng)
+    static double Gamma(double Shape, double Scale, System.Random Rng)
     {
-        // 形状k>1用 Marsaglia-Tsang。alpha=1でも問題ない程度。
-        double d = shape < 1 ? shape + (1.0 / 3.0) : shape - (1.0 / 3.0);
+        double d = Shape < 1 ? Shape + (1.0 / 3.0) : Shape - (1.0 / 3.0);
         double c = 1.0 / Math.Sqrt(9.0 * d);
         while (true)
         {
             double x, v;
             do
             {
-                x = PreferenceModel.NextGaussian(rng, 0, 1);
+                x = PreferenceModel.NextGaussian(Rng, 0, 1);
                 v = 1.0 + c * x;
             } while (v <= 0);
             v = v * v * v;
-            double u = rng.NextDouble();
-            if (u < 1 - 0.0331 * (x * x) * (x * x)) return d * v * scale;
-            if (Math.Log(u) < 0.5 * x * x + d * (1 - v + Math.Log(v))) return d * v * scale;
+            double u = Rng.NextDouble();
+            if (u < 1 - 0.0331 * (x * x) * (x * x)) return d * v * Scale;
+            if (Math.Log(u) < 0.5 * x * x + d * (1 - v + Math.Log(v))) return d * v * Scale;
         }
     }
 }

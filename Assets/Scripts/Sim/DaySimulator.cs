@@ -4,86 +4,106 @@ using System.Collections.Generic;
 public class DaySimulator : MonoBehaviour
 {
     [Header("Config")]
-    public CityState city; // インスペクタからは参照できないので、初期化用SOを別途作ってもOK
-    public SegmentSO[] segments; // セグメント一覧
-    public List<MenuItemSO> todaysItems = new();
-    public List<SetMenuSO> todaysSets = new();
+    public CityState City;
+    public SegmentSO[] Segments;
+    public List<MenuItemSO> TodaysItems = new();
+    public List<SetMenuSO> TodaysSets = new();
 
     [Header("Runtime")]
-    public int customersPerDay = 100;
-    public int seed = 42;
-    public float buyNoneBias = 0.0f; // 買わないの基準効用
-    public float beta = 2.0f;
+    public int CustomersPerDay = 100;
+    public int Seed = 42;
+    public float BuyNoneBias = -0.2f;   // ← 少しだけ「買わない」を弱める
+    public float Beta = 2.0f;
 
-    System.Random rng;
+    [Header("Logs")]
+    public int ReasonLogCount = 8;      // ← 何件まで理由を記録するか
+
+    System.Random Rng;
 
     [System.Serializable]
     public class DayResult
     {
-        public int soldCount;
-        public int soldSetCount;
-        public int revenue;
-        public float avgSatisfaction;
-        public float[] segInfluence; // セグメント別刺さり
+        public int SoldCount;
+        public int SoldSetCount;
+        public int Revenue;
+        public float AvgSatisfaction;
+        public float[] SegInfluence;
+        public List<string> SampleReasons = new(); // ← 追加
     }
 
     void Awake()
     {
-        rng = new System.Random(seed);
-        if (city == null)
-        {
-            // 簡易初期化
-            city = new CityState(segments, Season.Spring, seed: seed + 1);
-        }
+        Rng = new System.Random(Seed);
+        if (Segments == null || Segments.Length == 0) { Debug.LogError("[DaySimulator] Segments 未設定"); enabled = false; return; }
+        City = new CityState(Segments, Season.Spring, Seed: Seed + 1);
+        // 軽いバリデーション（省略可）
+        if ((TodaysItems == null || TodaysItems.Count == 0) && (TodaysSets == null || TodaysSets.Count == 0))
+            Debug.LogWarning("[DaySimulator] メニューが空です。");
     }
 
     public DayResult SimulateOneDay()
     {
-        var res = new DayResult
-        {
-            segInfluence = new float[segments.Length]
-        };
+        var res = new DayResult { SegInfluence = new float[Segments.Length] };
         float satSum = 0;
 
-        for (int c = 0; c < customersPerDay; c++)
+        for (int c = 0; c < CustomersPerDay; c++)
         {
-            int si = city.SampleSegmentIndex();
-            var seg = segments[si];
-            var taste = PreferenceModel.TasteFor(seg, city.season, rng, noise: 0.2f);
+            int si = City.SampleSegmentIndex();
+            var seg = Segments[si];
+            var taste = PreferenceModel.TasteFor(seg, City.Season, Rng, noise: 0.2f);
 
-            // ユーティリティ計算
+            // 内訳と合計ユーティリティ
             var utils = new List<float>();
-            foreach (var m in todaysItems)
-                utils.Add(DemandModel.UtilityForItem(taste, m, seg));
-            foreach (var s in todaysSets)
-                utils.Add(DemandModel.UtilityForSet(taste, s, seg));
+            var breakdowns = new List<UtilityBreakdown>();
 
-            int choice = DemandModel.ChooseIndexSoftmax(utils.ToArray(), rng, beta, buyNoneBias);
+            foreach (var m in TodaysItems)
+            {
+                var bd = DemandModel.EvaluateItem(taste, m, seg);
+                breakdowns.Add(bd);
+                utils.Add(bd.Sum());
+            }
+            foreach (var s in TodaysSets)
+            {
+                var bd = DemandModel.EvaluateSet(taste, s, seg);
+                breakdowns.Add(bd);
+                utils.Add(bd.Sum());
+            }
+
+            int choice = DemandModel.ChooseIndexSoftmax(utils.ToArray(), Rng, Beta, BuyNoneBias);
             bool bought = choice < utils.Count;
+
             if (bought)
             {
                 float u = utils[choice];
-                bool isSet = choice >= todaysItems.Count;
+                bool isSet = choice >= TodaysItems.Count;
                 if (isSet)
                 {
-                    var sm = todaysSets[choice - todaysItems.Count];
-                    res.revenue += sm.setPriceYen;
-                    res.soldSetCount++;
+                    var sm = TodaysSets[choice - TodaysItems.Count];
+                    res.Revenue += sm.SetPriceYen;
+                    res.SoldSetCount++;
                 }
                 else
                 {
-                    var mi = todaysItems[choice];
-                    res.revenue += mi.priceYen;
-                    res.soldCount++;
+                    var mi = TodaysItems[choice];
+                    res.Revenue += mi.PriceYen;
+                    res.SoldCount++;
                 }
-                float sat = Sigmoid(u - 0.2f); // 体感調整
+                float sat = Sigmoid(u - 0.2f);
                 satSum += sat;
-                res.segInfluence[si] += sat; // 刺さった度合い
+                res.SegInfluence[si] += sat;
+
+                // 理由ログ
+                if (res.SampleReasons.Count < ReasonLogCount)
+                {
+                    var (tag, val) = breakdowns[choice].TopContributor();
+                    res.SampleReasons.Add(ReasonFormat.ToPretty(tag, val));
+                }
             }
         }
-        res.avgSatisfaction = (customersPerDay > 0) ? satSum / customersPerDay : 0f;
-        // 街更新（遅延）
-        city.UpdateByInfluence(res.segInfluence, lambda: 0.05f, eta: 0.8f);
+        res.AvgSatisfaction = (CustomersPerDay > 0) ? satSum / CustomersPerDay : 0f;
+
+        // 夜：街を少しだけ変化
+        City.UpdateByInfluence(res.SegInfluence, Lambda: 0.05f, Eta: 0.8f);
         return res;
     }
 

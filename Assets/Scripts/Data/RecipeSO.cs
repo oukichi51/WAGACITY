@@ -1,52 +1,53 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Serialization;
 
 [System.Serializable]
 public struct IngredientAmount
 {
-    public IngredientSO ingredient;
-    public float units; // レシピでの使用量（単位）
+    public IngredientSO Ingredient;
+    public float Units;
 }
 
 [CreateAssetMenu(menuName = "Wagashi/Recipe")]
 public class RecipeSO : ScriptableObject
 {
-    public string recipeName;
-    public List<IngredientAmount> ingredients = new();
+    [FormerlySerializedAs("recipeName")] public string RecipeName;
+    [FormerlySerializedAs("ingredients")] public List<IngredientAmount> Ingredients = new();
+
     public Vector5 FlavorVector()
     {
-        Vector5 sum = Vector5.zero;
-        foreach (var ia in ingredients)
+        if (Ingredients == null || Ingredients.Count == 0)
         {
-            var i = ia.ingredient;
-            sum += new Vector5(i.sweet, i.bitter, i.chewy, i.bean, i.fruit) * ia.units;
+            Debug.LogWarning($"[RecipeSO] Ingredients is empty on '{RecipeName}'.");
+            return Vector5.Zero;
+        }
+        var sum = Vector5.Zero;
+        int used = 0;
+        foreach (var ia in Ingredients)
+        {
+            if (ia.Ingredient == null)
+            {
+                Debug.LogWarning($"[RecipeSO] Null Ingredient in '{RecipeName}'. Skipped.");
+                continue;
+            }
+            var i = ia.Ingredient;
+            sum += new Vector5(i.Sweet, i.Bitter, i.Chewy, i.Bean, i.Fruit) * ia.Units;
+            used++;
+        }
+        if (used == 0)
+        {
+            Debug.LogWarning($"[RecipeSO] No valid ingredients in '{RecipeName}'.");
+            return Vector5.Zero;
         }
         return sum.Normalized();
     }
     public float SugarGrams()
     {
         float g = 0f;
-        foreach (var ia in ingredients) g += ia.ingredient.sugarGramsPerUnit * ia.units;
+        if (Ingredients != null)
+            foreach (var ia in Ingredients) g += ia.Ingredient.SugarGramsPerUnit * ia.Units;
         return g;
     }
-    public float Kcal() => SugarGrams() * 4f; // シンプル版
-}
-
-[System.Serializable]
-public struct Vector5
-{
-    public float x, y, z, w, v;
-    public Vector5(float a, float b, float c, float d, float e) { x = a; y = b; z = c; w = d; v = e; }
-    public static Vector5 zero => new(0, 0, 0, 0, 0);
-    public static Vector5 operator +(Vector5 a, Vector5 b)
-        => new(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w, a.v + b.v);
-    public static Vector5 operator *(Vector5 a, float s)
-        => new(a.x * s, a.y * s, a.z * s, a.w * s, a.v * s);
-    public float Dot(Vector5 b) => x * b.x + y * b.y + z * b.z + w * b.w + v * b.v;
-    public float Magnitude() => Mathf.Sqrt(Dot(this));
-    public Vector5 Normalized()
-    {
-        float m = Magnitude();
-        return m > 1e-5f ? this * (1f / m) : zero;
-    }
+    public float Kcal() => SugarGrams() * 4f;
 }

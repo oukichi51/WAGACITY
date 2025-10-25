@@ -1,13 +1,15 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(menuName = "Wagashi/SetMenu")]
 public class SetMenuSO : ScriptableObject
 {
-    public MenuItemSO itemA;
-    public MenuItemSO itemB;
-    public int setPriceYen = 600; // Š„ˆøŒã
-    public AttentionType attention;
-    public string[] tags;
-    public Vector5 FlavorVector() => (itemA.recipe.FlavorVector() + itemB.recipe.FlavorVector()).Normalized();
-    public float Kcal() => itemA.recipe.Kcal() + itemB.recipe.Kcal();
+    [FormerlySerializedAs("itemA")] public MenuItemSO ItemA;
+    [FormerlySerializedAs("itemB")] public MenuItemSO ItemB;
+    [FormerlySerializedAs("setPriceYen")] public int SetPriceYen = 600;
+    [FormerlySerializedAs("attention")] public AttentionType Attention;
+    [FormerlySerializedAs("tags")] public string[] Tags;
+
+    public Vector5 FlavorVector() => (ItemA.Recipe.FlavorVector() + ItemB.Recipe.FlavorVector()).Normalized();
+    public float Kcal() => ItemA.Recipe.Kcal() + ItemB.Recipe.Kcal();
 }

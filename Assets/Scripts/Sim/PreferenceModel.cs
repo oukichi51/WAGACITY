@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public static class PreferenceModel
 {
@@ -10,34 +11,30 @@ public static class PreferenceModel
             Season.Summer => new Vector5(-0.1f, 0f, 0f, 0f, 0.3f),
             Season.Autumn => new Vector5(0.0f, 0.1f, 0f, 0.2f, 0.0f),
             Season.Winter => new Vector5(0.2f, 0f, 0f, 0.2f, 0.0f),
-            _ => Vector5.zero
+            _ => Vector5.Zero
         };
     }
 
-    public static Vector5 TasteFor(SegmentSO seg, Season season, System.Random rng, float noise = 0.2f)
+    public static Vector5 TasteFor(SegmentSO Seg, Season season, System.Random Rng, float noise = 0.2f)
     {
-        Vector5 basePref = new(seg.sweet, seg.bitter, seg.chewy, seg.bean, seg.fruit);
-        Vector5 seasonB = SeasonBias(season);
-        Vector5 n = new(
-            NextGaussian(rng, 0, noise),
-            NextGaussian(rng, 0, noise),
-            NextGaussian(rng, 0, noise),
-            NextGaussian(rng, 0, noise),
-            NextGaussian(rng, 0, noise)
+        var basePref = new Vector5(Seg.Sweet, Seg.Bitter, Seg.Chewy, Seg.Bean, Seg.Fruit);
+        var seasonB = SeasonBias(season);
+        var n = new Vector5(
+            NextGaussian(Rng, 0, noise),
+            NextGaussian(Rng, 0, noise),
+            NextGaussian(Rng, 0, noise),
+            NextGaussian(Rng, 0, noise),
+            NextGaussian(Rng, 0, noise)
         );
         return (basePref + seasonB + n).Normalized();
     }
 
-    // ïWèÄê≥ãKóêêî
-    public static float NextGaussian(System.Random rng, float mean = 0f, float std = 1f)
+    public static float NextGaussian(System.Random Rng, float mean = 0f, float std = 1f)
     {
-        // Box?Mullerñ@
-        double u1 = 1.0 - rng.NextDouble();
-        double u2 = 1.0 - rng.NextDouble();
+        double u1 = 1.0 - Rng.NextDouble();
+        double u2 = 1.0 - Rng.NextDouble();
         double randStdNormal = System.Math.Sqrt(-2.0 * System.Math.Log(u1)) *
                                System.Math.Sin(2.0 * System.Math.PI * u2);
         return (float)(mean + std * randStdNormal);
     }
 }
-
-public enum Season { Spring, Summer, Autumn, Winter }

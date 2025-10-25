@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d37d2aa94b00046aa2dd0364c6a1e1, type: 3}
+  m_Name: Student
+  m_EditorClassIdentifier: Assembly-CSharp::SegmentSO
+  SegName: Student
+  Sweet: 1
+  Bitter: 0.2
+  Chewy: 0.6
+  Bean: 0.4
+  Fruit: 0.8
+  PriceSensitivity: 0.004
+  KcalOk: 380
+  KcalSpan: 180
+  NoveltyLove: 0.12

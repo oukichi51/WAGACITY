@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b801182e4f29ce42951aef4f46b95f5, type: 3}
+  m_Name: StrawberryDaifuku
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeSO
+  RecipeName: StrawberryDaifuku
+  Ingredients:
+  - Ingredient: {fileID: 11400000, guid: e238c7b8c776edf41a9f8fbe9eb81941, type: 2}
+    Units: 2
+  - Ingredient: {fileID: 11400000, guid: ee8e2e8555aabba45a7f28207a0f8aec, type: 2}
+    Units: 2
+  - Ingredient: {fileID: 11400000, guid: dfd213f3389753e4da90bd48ec9a268d, type: 2}
+    Units: 1
+  - Ingredient: {fileID: 11400000, guid: 469d338b4f351954c9ee76f0f6cf97ba, type: 2}
+    Units: 1
